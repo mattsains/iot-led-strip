@@ -629,13 +629,13 @@ Text Label 8000 2250 0    50   ~ 0
 B1
 Text Label 8000 2950 0    50   ~ 0
 W1
-Text Label 5350 6400 0    50   ~ 0
+Text Label 5350 5200 0    50   ~ 0
 G1
-Text Label 5350 6500 0    50   ~ 0
+Text Label 5350 5400 0    50   ~ 0
 R1
-Text Label 5350 6200 0    50   ~ 0
+Text Label 5350 5300 0    50   ~ 0
 B1
-Text Label 5350 6300 0    50   ~ 0
+Text Label 5350 4600 0    50   ~ 0
 W1
 Text Label 10000 6150 0    50   ~ 0
 DAT
@@ -929,12 +929,12 @@ Wire Wire Line
 Wire Wire Line
 	9350 4450 10300 4450
 $Comp
-L Connector:Conn_01x05_Male J4
+L Connector:Conn_01x06_Male J4
 U 1 1 5E7462E3
 P 6500 4600
 F 0 "J4" H 6472 4624 50  0000 R CNN
-F 1 "Conn_01x05_Male" H 6472 4533 50  0000 R CNN
-F 2 "Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical" H 6500 4600 50  0001 C CNN
+F 1 "Conn_01x06_Male" H 6472 4533 50  0000 R CNN
+F 2 "Connector_PinHeader_2.54mm:PinHeader_1x06_P2.54mm_Vertical" H 6500 4600 50  0001 C CNN
 F 3 "~" H 6500 4600 50  0001 C CNN
 	1    6500 4600
 	-1   0    0    -1  
@@ -976,12 +976,12 @@ $EndComp
 $Comp
 L power:GND #PWR0131
 U 1 1 5E753E82
-P 6300 4800
-F 0 "#PWR0131" H 6300 4550 50  0001 C CNN
-F 1 "GND" H 6305 4627 50  0000 C CNN
-F 2 "" H 6300 4800 50  0001 C CNN
-F 3 "" H 6300 4800 50  0001 C CNN
-	1    6300 4800
+P 6300 4900
+F 0 "#PWR0131" H 6300 4650 50  0001 C CNN
+F 1 "GND" H 6305 4727 50  0000 C CNN
+F 2 "" H 6300 4900 50  0001 C CNN
+F 3 "" H 6300 4900 50  0001 C CNN
+	1    6300 4900
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
@@ -1002,4 +1002,13 @@ Wire Wire Line
 	5750 4500 5750 4700
 Wire Wire Line
 	5750 4700 6300 4700
+Connection ~ 4150 4200
+Text Label 4000 4200 0    50   ~ 0
+EN
+Text Label 6200 4800 0    50   ~ 0
+EN
+Wire Wire Line
+	6200 4800 6300 4800
+Wire Wire Line
+	4000 4200 4150 4200
 $EndSCHEMATC
