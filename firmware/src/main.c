@@ -9,8 +9,10 @@
 #include "esp_http_client.h"
 #include "string.h"
 #include "driver/ledc.h"
+#include "esp_websocket_client.h"
 
 static EventGroupHandle_t s_wifi_event_group;
+static TimerHandle_t shutdown_signal_timer;
 
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_FAIL_BIT BIT1
@@ -102,49 +104,11 @@ void wifiConnect(void)
 
 static ledc_channel_config_t ledc_channel[4];
 
-esp_err_t http_event(esp_http_client_event_t *evt)
-{
-    switch (evt->event_id)
-    {
-    case HTTP_EVENT_ERROR:
-        ESP_LOGI("http", "HTTP_EVENT_ERROR");
-        break;
-    case HTTP_EVENT_ON_DATA:
-        //ESP_LOGI("http", "HTTP_EVENT_ON_DATA, len=%d", evt->data_len);
-        if (!esp_http_client_is_chunked_response(evt->client))
-        {
-            char *result = evt->data;
-            result[evt->data_len] = 0;
-
-            char *ptr = strtok(result, ",");
-            for (int i = 0; i < 4; i++)
-            {
-                int level = atoi(ptr);
-                ptr = strtok(NULL, ",");
-
-                printf("%i - ", level);
-                if (i == 3)
-                {
-                    printf("\n");
-                }
-
-                ledc_set_fade_with_time(ledc_channel[i].speed_mode, ledc_channel[i].channel, level, 500);
-                ledc_fade_start(ledc_channel[i].speed_mode, ledc_channel[i].channel, LEDC_FADE_NO_WAIT);
-            }
-        }
-
-    default:
-
-        break;
-    }
-    return ESP_OK;
-}
-
 void setup_pwm(void)
 {
     ledc_timer_config_t ledc_timer = {
-        .duty_resolution = LEDC_TIMER_13_BIT,
-        .freq_hz = 5000,
+        .duty_resolution = LEDC_TIMER_11_BIT,
+        .freq_hz = 20000,
         .speed_mode = LEDC_LOW_SPEED_MODE,
         .timer_num = LEDC_TIMER_1,
         .clk_cfg = LEDC_AUTO_CLK,
@@ -191,6 +155,51 @@ void setup_pwm(void)
     ledc_fade_func_install(0);
 }
 
+static char* data_received[50];
+
+static void websocket_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
+{
+    esp_websocket_event_data_t *data = (esp_websocket_event_data_t *)event_data;
+    switch (event_id)
+    {
+    case WEBSOCKET_EVENT_CONNECTED:
+        ESP_LOGI("web", "WEBSOCKET_EVENT_CONNECTED");
+        break;
+    case WEBSOCKET_EVENT_DISCONNECTED:
+        ESP_LOGI("web", "WEBSOCKET_EVENT_DISCONNECTED");
+        break;
+    case WEBSOCKET_EVENT_DATA:
+        ESP_LOGI("web", "WEBSOCKET_EVENT_DATA");
+        ESP_LOGI("web", "Received opcode=%d", data->op_code);
+        ESP_LOGW("web", "Received=%.*s", data->data_len, (char *)data->data_ptr);
+
+        if (data->op_code != 1) break;
+
+        char result[50];
+        memcpy(result, data->data_ptr, data->data_len);
+        result[data->data_len] = 0;
+        char *ptr = strtok(result, ",");
+        for (int i = 0; i < 4; i++)
+        {
+            int level = atoi(ptr);
+            ptr = strtok(NULL, ",");
+
+            printf("%i - ", level);
+            if (i == 3)
+            {
+                printf("\n");
+            }
+
+            ledc_set_fade_with_time(ledc_channel[i].speed_mode, ledc_channel[i].channel, level, 500);
+            ledc_fade_start(ledc_channel[i].speed_mode, ledc_channel[i].channel, LEDC_FADE_NO_WAIT);
+        }
+        break;
+    case WEBSOCKET_EVENT_ERROR:
+        ESP_LOGI("web", "WEBSOCKET_EVENT_ERROR");
+        break;
+    }
+}
+
 void app_main(void)
 {
     esp_err_t ret = nvs_flash_init();
@@ -206,16 +215,16 @@ void app_main(void)
     ESP_LOGI("wifi", "ESP_WIFI_MODE_STA");
     wifiConnect();
 
-    esp_http_client_config_t config = {
-        .url = "http://192.168.50.199:8080/t",
-        .event_handler = http_event};
+    esp_websocket_client_config_t websocket_cfg = {
+        .uri = "ws://192.168.50.199:8080",
+    };
+
+    esp_websocket_client_handle_t client = esp_websocket_client_init(&websocket_cfg);
+    esp_websocket_register_events(client, WEBSOCKET_EVENT_ANY, websocket_event_handler, (void *)client);
+    esp_websocket_client_start(client);
 
     while (1)
     {
-        esp_http_client_handle_t client = esp_http_client_init(&config);
-        esp_http_client_perform(client);
-
-        vTaskDelay(500 / portTICK_RATE_MS);
-        esp_http_client_cleanup(client);
+        vTaskDelay(1000000 / portTICK_PERIOD_MS);
     }
 }
