@@ -1,0 +1,61 @@
+<html>
+
+<style>
+    .slider {
+        border-radius: 24pt;
+        -webkit-appearance: none;
+        background: #ccc;
+    }
+
+    #w::-moz-range-thumb,
+    #w::-webkit-slider-thumb {
+        background: #fff;
+    }
+
+    #r::-moz-range-thumb,
+    #r::-webkit-slider-thumb {
+        background: #f00;
+    }
+
+    #g::-moz-range-thumb {
+        background: #0f0;
+    }
+
+    #b::-moz-range-thumb {
+        background: #00f;
+    }
+</style>
+
+<script src="https://code.jquery.com/jquery-3.5.0.slim.min.js"></script>
+<script>
+    $(document).ready(() => {
+        $('.slider').change(() => {
+            const w = document.getElementById('w').value;
+            const r = document.getElementById('r').value;
+            const g = document.getElementById('g').value;
+            const b = document.getElementById('b').value;
+            fetch(`/s?w=${w}&r=${r}&g=${g}&b=${b}`);
+        });
+    });
+</script>
+
+<body>
+    <div class="slidecontainer">
+        <input type="range" min="0" max="8190" value="0" class="slider" id="w">
+    </div>
+
+    <div class="slidecontainer">
+        <input type="range" min="0" max="8190" value="0" class="slider" id="r">
+    </div>
+
+    <div class="slidecontainer">
+        <input type="range" min="0" max="8190" value="0" class="slider" id="g">
+    </div>
+
+    <div class="slidecontainer">
+        <input type="range" min="0" max="8190" value="0" class="slider" id="b">
+    </div>
+</body>
+
+
+</html>

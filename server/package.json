@@ -1,0 +1,23 @@
+{
+  "name": "led-controller-server",
+  "version": "1.0.0",
+  "description": "Controls an IoT LED strip controller",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mattsains/iot-led-strip.git"
+  },
+  "author": "Matthew Sainsbury",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mattsains/iot-led-strip/issues"
+  },
+  "homepage": "https://github.com/mattsains/iot-led-strip#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
