@@ -37,22 +37,15 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t e
                  ip4addr_ntoa(&event->ip_info.ip));
         wifi_retry_num = 0;
         xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
-    } else {
+    }
+    else
+    {
         ESP_LOGI("wifi", "Got unexpected event %i", event_id);
     }
 }
 
-esp_err_t wifiConnect(char *ssid, char *password)
+esp_err_t wifiConnect(wifi_sta_config_t config)
 {
-    // set up non-volatile storage, which is required for WiFi for some reason.
-    esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
-    {
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        ret = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK(ret);
-
     s_wifi_event_group = xEventGroupCreate();
 
     tcpip_adapter_init();
@@ -66,15 +59,7 @@ esp_err_t wifiConnect(char *ssid, char *password)
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler, NULL));
 
     wifi_config_t wifi_config = {
-        .sta = {
-            .ssid = "",
-            .password = ""
-        }
-    };
-
-    strcpy((char*)wifi_config.sta.ssid, ssid);
-    strcpy((char*)wifi_config.sta.password, password);
-
+        .sta = config};
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
@@ -107,7 +92,6 @@ esp_err_t wifiConnect(char *ssid, char *password)
 typedef void (*websocket_callback)(int32_t event_type, char *data);
 
 static websocket_callback _callback;
-
 
 static void websocket_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {

@@ -54,6 +54,7 @@ void setup_leds(void)
 }
 
 void set_led(uint8_t led, uint32_t level) {
-    ledc_set_fade_with_time(ledc_channel[led].speed_mode, ledc_channel[led].channel, level, 500);
+    int actual = (level * 2047)/1000;
+    ledc_set_fade_with_time(ledc_channel[led].speed_mode, ledc_channel[led].channel, actual, 500);
     ledc_fade_start(ledc_channel[led].speed_mode, ledc_channel[led].channel, LEDC_FADE_NO_WAIT);
 }
