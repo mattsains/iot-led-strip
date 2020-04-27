@@ -7,15 +7,11 @@ const WebSocket = require('ws');
 
 const wss = new WebSocket.Server({ port: 8080 });
 
-wss.on('connection', ws => {
-    ws.send(`${w},${r},${g},${b}`);
-})
-
-
 let w, r, g, b;
 
-app.get('/t', (req, res) => {
-    res.send(`${w},${r},${g},${b}`);
+wss.on('connection', ws => {
+    console.log("new connection");
+    ws.send(`${w},${r},${g},${b}`);
 });
 
 app.get('/s', (req, res) => {
