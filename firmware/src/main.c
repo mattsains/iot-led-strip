@@ -1,18 +1,7 @@
-#include "pair.c"
-#include "driver/gpio.h"
-#include "esp_wifi.h"
-#include "esp_system.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/event_groups.h"
-#include "freertos/task.h"
-#include "esp_log.h"
-#include "esp_http_client.h"
-#include "string.h"
+#include "main.h"
 
-#include "wifi.c"
-#include "led.c"
 
-void callback(int32_t event_type, char *result)
+void websocket_callback(int32_t event_type, char *result)
 {
     char *ptr = strtok(result, ",");
     for (int i = 0; i < 4; i++)
@@ -53,9 +42,6 @@ esp_err_t get_wifi_info(wifi_sta_config_t *config)
         return err;
 
     nvs_close(nvs_handle);
-
-    ESP_LOGI("a-nvm", "%s", config->ssid);
-    ESP_LOGI("a-nvm", "%s", config->password);
     return ESP_OK;
 }
 
@@ -74,16 +60,13 @@ void app_main(void)
 {
     setup_nvr();
     setup_leds();
+    
 
-    wifi_sta_config_t wifiConfig = {
-        .ssid = "",
-        .password = ""};
+    wifi_sta_config_t wifiConfig = {};
     ESP_ERROR_CHECK(get_wifi_info(&wifiConfig));
-    ESP_LOGI("debug", "%s", wifiConfig.ssid);
-    ESP_LOGI("debug", "%s", wifiConfig.password);
-    ESP_ERROR_CHECK(wifiConnect(wifiConfig));
+    ESP_ERROR_CHECK(wifi_connect(wifiConfig));
 
-    establish_websocket("ws://192.168.50.199:8080", callback);
+    establish_websocket("ws://192.168.50.199:8080", websocket_callback);
 
     while (1)
     {

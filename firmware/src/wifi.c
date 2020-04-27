@@ -1,7 +1,4 @@
-#include "freertos/event_groups.h"
-#include "esp_wifi.h"
-#include "esp_websocket_client.h"
-#include "nvs_flash.h"
+#include "wifi.h"
 
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_FAIL_BIT BIT1
@@ -44,7 +41,7 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t e
     }
 }
 
-esp_err_t wifiConnect(wifi_sta_config_t config)
+esp_err_t wifi_connect(wifi_sta_config_t config)
 {
     s_wifi_event_group = xEventGroupCreate();
 
@@ -89,9 +86,7 @@ esp_err_t wifiConnect(wifi_sta_config_t config)
     }
 }
 
-typedef void (*websocket_callback)(int32_t event_type, char *data);
-
-static websocket_callback _callback;
+static _websocket_callback _callback;
 
 static void websocket_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
@@ -123,7 +118,7 @@ static void websocket_event_handler(void *handler_args, esp_event_base_t base, i
     }
 }
 
-void establish_websocket(char *url, websocket_callback callback)
+void establish_websocket(char *url, _websocket_callback callback)
 {
     _callback = callback;
     esp_websocket_client_config_t websocket_cfg = {
