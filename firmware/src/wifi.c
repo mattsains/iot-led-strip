@@ -86,6 +86,61 @@ esp_err_t wifi_connect(wifi_sta_config_t config)
     }
 }
 
+static void wifi_ap_event_handler(void *arg, esp_event_base_t event_base,
+                                  int32_t event_id, void *event_data)
+{
+    if (event_id == WIFI_EVENT_AP_STACONNECTED)
+    {
+        wifi_event_ap_staconnected_t *event = (wifi_event_ap_staconnected_t *)event_data;
+        ESP_LOGI("ap", "station " MACSTR " join, AID=%d",
+                 MAC2STR(event->mac), event->aid);
+    }
+    else if (event_id == WIFI_EVENT_AP_STADISCONNECTED)
+    {
+        wifi_event_ap_stadisconnected_t *event = (wifi_event_ap_stadisconnected_t *)event_data;
+        ESP_LOGI("ap", "station " MACSTR " leave, AID=%d",
+                 MAC2STR(event->mac), event->aid);
+    }
+}
+
+void wifi_ap_start(httpd_uri_t *routes, size_t routes_length)
+{
+    tcpip_adapter_init();
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_ap_event_handler, NULL));
+
+    const char* ssid = "LED Controller";
+
+    wifi_config_t wifi_config = {
+        .ap = {
+            .ssid = "",
+            .ssid_len = 0,
+            .password = "letmein12",
+            .max_connection = 10,
+            .authmode = WIFI_AUTH_WPA_WPA2_PSK},
+    };
+
+    strcpy((char*)wifi_config.ap.ssid, ssid);
+    wifi_config.ap.ssid_len = strlen(ssid);
+
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
+    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config));
+    ESP_ERROR_CHECK(esp_wifi_start());
+
+    ESP_LOGI("ap", "wifi_init_softap finished.");
+
+    httpd_handle_t server = NULL;
+    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    ESP_LOGI("httpd", "Starting server on port: '%d'", config.server_port);
+    ESP_ERROR_CHECK(httpd_start(&server, &config));
+
+    for(size_t i=0; i<routes_length; i++)
+        httpd_register_uri_handler(server, &routes[i]);
+}
+
 static _websocket_callback _callback;
 
 static void websocket_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
