@@ -14,3 +14,8 @@
 #include "string.h"
 
 #include "statics.h"
+
+#define WIFI_NS "wifi-setup"
+#define WIFI_SSID "ssid"
+#define WIFI_PASS "password"
+#define API_KEY "apikey"

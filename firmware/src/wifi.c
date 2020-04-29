@@ -112,7 +112,7 @@ void wifi_ap_start(httpd_uri_t *routes, size_t routes_length)
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_ap_event_handler, NULL));
 
-    const char* ssid = "LED Controller";
+    const char *ssid = "LED Controller";
 
     wifi_config_t wifi_config = {
         .ap = {
@@ -123,7 +123,7 @@ void wifi_ap_start(httpd_uri_t *routes, size_t routes_length)
             .authmode = WIFI_AUTH_WPA_WPA2_PSK},
     };
 
-    strcpy((char*)wifi_config.ap.ssid, ssid);
+    strcpy((char *)wifi_config.ap.ssid, ssid);
     wifi_config.ap.ssid_len = strlen(ssid);
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
@@ -137,11 +137,13 @@ void wifi_ap_start(httpd_uri_t *routes, size_t routes_length)
     ESP_LOGI("httpd", "Starting server on port: '%d'", config.server_port);
     ESP_ERROR_CHECK(httpd_start(&server, &config));
 
-    for(size_t i=0; i<routes_length; i++)
+    for (size_t i = 0; i < routes_length; i++)
         httpd_register_uri_handler(server, &routes[i]);
 }
 
 static _websocket_callback _callback;
+
+static char* _apikey;
 
 static void websocket_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
@@ -150,6 +152,8 @@ static void websocket_event_handler(void *handler_args, esp_event_base_t base, i
     {
     case WEBSOCKET_EVENT_CONNECTED:
         ESP_LOGI("web", "WEBSOCKET_EVENT_CONNECTED");
+        esp_websocket_client_send_text(data->client, DEVICE_ID, strlen(DEVICE_ID), 10000);
+        esp_websocket_client_send_text(data->client, _apikey, strlen(_apikey), 10000);
         break;
     case WEBSOCKET_EVENT_DISCONNECTED:
         ESP_LOGI("web", "WEBSOCKET_EVENT_DISCONNECTED");
@@ -173,12 +177,15 @@ static void websocket_event_handler(void *handler_args, esp_event_base_t base, i
     }
 }
 
-void establish_websocket(char *url, _websocket_callback callback)
+void establish_websocket(char *url, char *apikey, _websocket_callback callback)
 {
     _callback = callback;
     esp_websocket_client_config_t websocket_cfg = {
         .uri = url,
     };
+
+    _apikey = malloc(64);
+    strcpy(_apikey, apikey);
 
     esp_websocket_client_handle_t client = esp_websocket_client_init(&websocket_cfg);
     esp_websocket_register_events(client, WEBSOCKET_EVENT_ANY, websocket_event_handler, (void *)client);

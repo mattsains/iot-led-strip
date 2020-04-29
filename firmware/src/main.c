@@ -18,25 +18,33 @@ void websocket_callback(int32_t event_type, char *result)
     }
 }
 
-esp_err_t get_wifi_info(wifi_sta_config_t *config)
+esp_err_t get_wifi_info(char *ssid, char *password, char *apikey)
 {
     nvs_handle_t nvs_handle;
-    ESP_ERROR_CHECK(nvs_open("wifi-setup", NVS_READWRITE, &nvs_handle));
+    ESP_ERROR_CHECK(nvs_open(WIFI_NS, NVS_READWRITE, &nvs_handle));
 
     size_t required_size = 0;
-    esp_err_t err = nvs_get_str(nvs_handle, "ssid", NULL, &required_size);
+    esp_err_t err = nvs_get_str(nvs_handle, WIFI_SSID, NULL, &required_size);
     if (err)
         return err;
 
-    err = nvs_get_str(nvs_handle, "ssid", (char *)config->ssid, &required_size);
+    err = nvs_get_str(nvs_handle, WIFI_SSID, ssid, &required_size);
     if (err)
         return err;
 
     required_size = 0;
-    err = nvs_get_str(nvs_handle, "password", NULL, &required_size);
+    err = nvs_get_str(nvs_handle, WIFI_PASS, NULL, &required_size);
     if (err)
         return err;
-    err = nvs_get_str(nvs_handle, "password", (char *)config->password, &required_size);
+    err = nvs_get_str(nvs_handle, WIFI_PASS, password, &required_size);
+    if (err)
+        return err;
+
+    required_size = 0;
+    err = nvs_get_str(nvs_handle, API_KEY, NULL, &required_size);
+    if (err)
+        return err;
+    err = nvs_get_str(nvs_handle, API_KEY, apikey, &required_size);
     if (err)
         return err;
 
@@ -131,11 +139,21 @@ static esp_err_t setup_handler(httpd_req_t *req)
         ESP_LOGI("httpd", "Received SSID: '%s'", ssid);
         ESP_LOGI("httpd", "Received password: '%s'", password);
         ESP_LOGI("httpd", "Received api key: '%s'", apiKey);
+
+        nvs_handle_t nvs_handle;
+        ESP_ERROR_CHECK(nvs_open(WIFI_NS, NVS_READWRITE, &nvs_handle));
+
+        nvs_set_str(nvs_handle, WIFI_SSID, ssid);
+        nvs_set_str(nvs_handle, WIFI_PASS, password);
+        nvs_set_str(nvs_handle, API_KEY, apiKey);
+        nvs_commit(nvs_handle);
     }
     free(req_body);
 
     const char *thanks = "<h1>Thanks!</h1>";
     httpd_resp_send(req, thanks, strlen(thanks));
+
+    esp_restart();
     return ESP_OK;
 }
 
@@ -155,13 +173,28 @@ void app_main(void)
     setup_nvr();
     setup_leds();
 
-    wifi_ap_start(routes, sizeof(routes) / sizeof(routes[0]));
+    char ssid[32];
+    char password[64];
+    char apiKey[64];
+    esp_err_t load_config_result = get_wifi_info(ssid, password, apiKey);
 
-    // wifi_sta_config_t wifiConfig = {};
-    // ESP_ERROR_CHECK(get_wifi_info(&wifiConfig));
-    // ESP_ERROR_CHECK(wifi_connect(wifiConfig));
+    if (load_config_result != 0)
+    {
+        // if there's no wifi configuration, assume that it's the first run of this device, and enter setup mode.
+        wifi_ap_start(routes, sizeof(routes) / sizeof(routes[0]));
+    }
+    else
+    {
+        wifi_sta_config_t wifiConfig = {
+                .ssid = "",
+                .password = ""
+        };
+        strcpy((char*) wifiConfig.ssid, ssid);
+        strcpy((char*) wifiConfig.password, password);
+        ESP_ERROR_CHECK(wifi_connect(wifiConfig));
 
-    // establish_websocket("ws://192.168.50.199:8080", websocket_callback);
+        establish_websocket("ws://192.168.50.199:8080", apiKey, websocket_callback);
+    }
 
     while (1)
     {

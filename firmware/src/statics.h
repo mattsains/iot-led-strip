@@ -1,3 +1,8 @@
+#ifndef _STATICS_H
+#define _STATICS_H
+
+#define DEVICE_ID "esp-iot-1"
+
 static const char* html_setup =
 R"END(
 <html>
@@ -62,3 +67,5 @@ R"END(
 
 </html>
 )END";
+
+#endif

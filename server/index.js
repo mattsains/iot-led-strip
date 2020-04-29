@@ -14,6 +14,10 @@ wss.on('connection', ws => {
     // It looks like if you send right away, the esp32 doesn't catch the transmission.
     // So by moving the send into the event loop, we force the websocket library to send it later.
     setTimeout(() => ws.send(`${w},${r},${g},${b}`), 1);
+
+    ws.on('message', function incoming(message) {
+        console.log('received: %s', message);
+    });
 });
 
 app.get('/s', (req, res) => {
@@ -23,7 +27,7 @@ app.get('/s', (req, res) => {
     g = req.query.g;
     b = req.query.b;
 
-    wss.clients.forEach(client =>{
+    wss.clients.forEach(client => {
         if (client.readyState === WebSocket.OPEN) {
             console.log("sending");
             client.send(`${w},${r},${g},${b}`);
