@@ -193,7 +193,7 @@ void app_main(void)
         strcpy((char*) wifiConfig.password, password);
         ESP_ERROR_CHECK(wifi_connect(wifiConfig));
 
-        establish_websocket("ws://192.168.50.199:8080", apiKey, websocket_callback);
+        establish_websocket("ws://iot.sainsbury.io/ws", apiKey, websocket_callback);
     }
 
     while (1)
