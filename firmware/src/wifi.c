@@ -143,7 +143,7 @@ void wifi_ap_start(httpd_uri_t *routes, size_t routes_length)
 
 static _websocket_callback _callback;
 
-static char* _apikey;
+static char *_apikey;
 
 static void websocket_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
@@ -177,11 +177,12 @@ static void websocket_event_handler(void *handler_args, esp_event_base_t base, i
     }
 }
 
-void establish_websocket(char *url, char *apikey, _websocket_callback callback)
+void establish_websocket(char *url, char *apikey, char *sslCert, _websocket_callback callback)
 {
     _callback = callback;
     esp_websocket_client_config_t websocket_cfg = {
         .uri = url,
+        .cert_pem = sslCert,
     };
 
     _apikey = malloc(64);

@@ -12,4 +12,4 @@ void wifi_ap_start(httpd_uri_t *routes, size_t routes_length);
 
 typedef void (*_websocket_callback)(int32_t event_type, char *data);
 
-void establish_websocket(char *url, char *apikey, _websocket_callback callback);
+void establish_websocket(char *url, char *apikey, char *sslCert, _websocket_callback callback);

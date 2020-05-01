@@ -1,5 +1,22 @@
 #include "main.h"
 
+/**
+ * This method returns true if the digital LED line is pulled low.
+ */
+bool isResetHeld()
+{
+    const char ioPin = 12;
+    gpio_config_t resetConfig;
+    resetConfig.intr_type = GPIO_PIN_INTR_DISABLE;
+    resetConfig.mode = GPIO_MODE_INPUT;
+    resetConfig.pin_bit_mask = 1ULL << ioPin; // DAT pin
+    resetConfig.pull_down_en = 0;
+    resetConfig.pull_up_en = 1;
+    gpio_config(&resetConfig);
+
+    return gpio_get_level(ioPin) == 0;
+}
+
 void websocket_callback(int32_t event_type, char *result)
 {
     char *ptr = strtok(result, ",");
@@ -18,38 +35,42 @@ void websocket_callback(int32_t event_type, char *result)
     }
 }
 
-esp_err_t get_wifi_info(char *ssid, char *password, char *apikey)
+connection_config_t get_connection_info()
 {
+    connection_config_t result;
+
     nvs_handle_t nvs_handle;
     ESP_ERROR_CHECK(nvs_open(WIFI_NS, NVS_READWRITE, &nvs_handle));
 
     size_t required_size = 0;
+    
     esp_err_t err = nvs_get_str(nvs_handle, WIFI_SSID, NULL, &required_size);
     if (err)
-        return err;
+        return (connection_config_t){ };
 
-    err = nvs_get_str(nvs_handle, WIFI_SSID, ssid, &required_size);
+    
+    err = nvs_get_str(nvs_handle, WIFI_SSID, (char*) &result.ssid, &required_size);
     if (err)
-        return err;
+        return (connection_config_t){ };
 
     required_size = 0;
     err = nvs_get_str(nvs_handle, WIFI_PASS, NULL, &required_size);
     if (err)
-        return err;
-    err = nvs_get_str(nvs_handle, WIFI_PASS, password, &required_size);
+        return (connection_config_t){ };
+    err = nvs_get_str(nvs_handle, WIFI_PASS, (char*) &result.password, &required_size);
     if (err)
-        return err;
+        return (connection_config_t){ };
 
     required_size = 0;
     err = nvs_get_str(nvs_handle, API_KEY, NULL, &required_size);
     if (err)
-        return err;
-    err = nvs_get_str(nvs_handle, API_KEY, apikey, &required_size);
+        return (connection_config_t){ };
+    err = nvs_get_str(nvs_handle, API_KEY, (char*) &result.apiKey, &required_size);
     if (err)
-        return err;
+        return (connection_config_t){ };
 
     nvs_close(nvs_handle);
-    return ESP_OK;
+    return result;
 }
 
 void setup_nvr()
@@ -170,15 +191,19 @@ static httpd_uri_t routes[2] = {{
 
 void app_main(void)
 {
+    if (isResetHeld())
+    {
+        // erase the nvr so we can re-configure the device
+        ESP_LOGI("nvs", "Erasing the nvs because reset is low");
+        ESP_ERROR_CHECK(nvs_flash_erase());
+    }
+
     setup_nvr();
     setup_leds();
 
-    char ssid[32];
-    char password[64];
-    char apiKey[64];
-    esp_err_t load_config_result = get_wifi_info(ssid, password, apiKey);
+    connection_config_t load_config_result = get_connection_info();
 
-    if (load_config_result != 0)
+    if (load_config_result.ssid[0] == 0)
     {
         // if there's no wifi configuration, assume that it's the first run of this device, and enter setup mode.
         wifi_ap_start(routes, sizeof(routes) / sizeof(routes[0]));
@@ -186,14 +211,13 @@ void app_main(void)
     else
     {
         wifi_sta_config_t wifiConfig = {
-                .ssid = "",
-                .password = ""
-        };
-        strcpy((char*) wifiConfig.ssid, ssid);
-        strcpy((char*) wifiConfig.password, password);
+            .ssid = "",
+            .password = ""};
+        strcpy((char *)wifiConfig.ssid, load_config_result.ssid);
+        strcpy((char *)wifiConfig.password, load_config_result.password);
         ESP_ERROR_CHECK(wifi_connect(wifiConfig));
 
-        establish_websocket("ws://iot.sainsbury.io/ws", apiKey, websocket_callback);
+        establish_websocket("wss://iot.sainsbury.io/ws", load_config_result.apiKey, load_config_result.sslCert, websocket_callback);
     }
 
     while (1)
