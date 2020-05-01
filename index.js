@@ -25,8 +25,9 @@ app.get('/s', (req, res) => {
     g = req.query.g;
     b = req.query.b;
 
-    wss.clients.forEach(client => {
-        if (client.readyState === expressWs.getWss().OPEN) {
+    expressWs.getWss().clients.forEach(client => {
+        console.log(client.readyState);
+        if (client.readyState == 1) {
             console.log("sending");
             client.send(`${w},${r},${g},${b}`);
         }
