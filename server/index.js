@@ -1,15 +1,15 @@
+const https = require('https');
+const fs = require('fs');
 const express = require('express');
 const path = require('path');
 
 const app = express();
 
-const WebSocket = require('ws');
-
-const wss = new WebSocket.Server({ port: 8080 });
+const expressWs = require('express-ws')(app);
 
 let w, r, g, b;
 
-wss.on('connection', ws => {
+app.ws('/ws', ws => {
     console.log("new connection");
     // It looks like if you send right away, the esp32 doesn't catch the transmission.
     // So by moving the send into the event loop, we force the websocket library to send it later.
@@ -27,8 +27,9 @@ app.get('/s', (req, res) => {
     g = req.query.g;
     b = req.query.b;
 
-    wss.clients.forEach(client => {
-        if (client.readyState === WebSocket.OPEN) {
+    expressWs.getWss().clients.forEach(client => {
+        console.log(client.readyState);
+        if (client.readyState == 1) {
             console.log("sending");
             client.send(`${w},${r},${g},${b}`);
         }
@@ -40,6 +41,7 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'ui.html'));
 })
 
-app.listen(8081);
-
-
+https.createServer({
+    key: fs.readFileSync("/etc/letsencrypt/live/iot.sainsbury.io/fullchain.pem"),
+    cert: fs.readFileSync("/etc/letsencrypt/live/iot.sainsbury.io/privkey.pem"),
+}, app).listen(443);

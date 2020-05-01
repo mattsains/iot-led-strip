@@ -19,6 +19,7 @@
   "homepage": "https://github.com/mattsains/iot-led-strip#readme",
   "dependencies": {
     "express": "^4.17.1",
+    "express-ws": "^4.0.0",
     "ws": "^7.2.3"
   }
 }
