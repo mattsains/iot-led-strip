@@ -3,13 +3,11 @@ const path = require('path');
 
 const app = express();
 
-const WebSocket = require('ws');
-
-const wss = new WebSocket.Server({ port: 8080 });
+const expressWs = require('express-ws')(app);
 
 let w, r, g, b;
 
-wss.on('connection', ws => {
+app.ws('/ws', ws => {
     console.log("new connection");
     // It looks like if you send right away, the esp32 doesn't catch the transmission.
     // So by moving the send into the event loop, we force the websocket library to send it later.
@@ -28,7 +26,7 @@ app.get('/s', (req, res) => {
     b = req.query.b;
 
     wss.clients.forEach(client => {
-        if (client.readyState === WebSocket.OPEN) {
+        if (client.readyState === expressWs.getWss().OPEN) {
             console.log("sending");
             client.send(`${w},${r},${g},${b}`);
         }
@@ -40,6 +38,6 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'ui.html'));
 })
 
-app.listen(8081);
+app.listen(process.env.PORT || 8080);
 
 
