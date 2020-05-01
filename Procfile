@@ -1,2 +1,2 @@
-release: cd server && npm ci
-web: cd server && npm start
+release:npm ci
+web: npm start
