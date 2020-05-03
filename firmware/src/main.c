@@ -20,13 +20,18 @@ bool isResetHeld()
 void websocket_callback(int32_t event_type, char *result)
 {
     char *ptr = strtok(result, ",");
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 8; i++)
     {
-        int level = atoi(ptr);
+        char *endptr;
+        int level = strtol(ptr, endptr, 10);
+        if (endptr == NULL) {
+            ESP_LOGE("main", "Received invalid message.");
+        }
+
         ptr = strtok(NULL, ",");
 
         printf("%i - ", level);
-        if (i == 3)
+        if (i == 7)
         {
             printf("\n");
         }
@@ -102,12 +107,15 @@ static esp_err_t setup_handler(httpd_req_t *req)
 
         req_body[req->content_len] = 0;
 
+        ESP_LOGI("httpd", "Received something");
+
         // TODO: move this to a helper function.
         char ssid[32];
         char password[64];
         char apiKey[64];
+        char *cert = malloc(req->content_len);
 
-        char acc[65];
+        char *acc = malloc(req->content_len);
         size_t acc_pos = 0;
         char c = req_body[0];
         char *fieldUpdating = NULL;
@@ -126,6 +134,8 @@ static esp_err_t setup_handler(httpd_req_t *req)
                     fieldUpdating = password;
                 else if (!strcmp(acc, "apikey"))
                     fieldUpdating = apiKey;
+                else if (!strcmp(acc, "cert"))
+                    fieldUpdating = cert;
                 else
                     fieldUpdating = NULL;
             }
@@ -155,11 +165,14 @@ static esp_err_t setup_handler(httpd_req_t *req)
         {
             strcpy(fieldUpdating, acc);
         }
+        free(acc);
+        free(cert);
 
-        ESP_LOGI("httpd", "Received: %s", req_body);
+        //ESP_LOGI("httpd", "Received: %s", req_body);
         ESP_LOGI("httpd", "Received SSID: '%s'", ssid);
         ESP_LOGI("httpd", "Received password: '%s'", password);
         ESP_LOGI("httpd", "Received api key: '%s'", apiKey);
+        //ESP_LOGI("httpd", "Received cert: '%s'", cert);
 
         nvs_handle_t nvs_handle;
         ESP_ERROR_CHECK(nvs_open(WIFI_NS, NVS_READWRITE, &nvs_handle));
@@ -167,6 +180,7 @@ static esp_err_t setup_handler(httpd_req_t *req)
         nvs_set_str(nvs_handle, WIFI_SSID, ssid);
         nvs_set_str(nvs_handle, WIFI_PASS, password);
         nvs_set_str(nvs_handle, API_KEY, apiKey);
+        nvs_set_str(nvs_handle, CERT, cert);
         nvs_commit(nvs_handle);
     }
     free(req_body);
@@ -217,7 +231,7 @@ void app_main(void)
         strcpy((char *)wifiConfig.password, load_config_result.password);
         ESP_ERROR_CHECK(wifi_connect(wifiConfig));
 
-        establish_websocket("wss://iot.sainsbury.io/ws", load_config_result.apiKey, load_config_result.sslCert, websocket_callback);
+        establish_websocket("wss://iot.sainsbury.io:443/ws", load_config_result.apiKey, load_config_result.sslCert, websocket_callback);
     }
 
     while (1)

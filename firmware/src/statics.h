@@ -51,12 +51,17 @@ R"END(
 
         <div>
             <label for="password">Password:</label>
-            <input type="password" name="password" required />
+            <input type="text" name="password" required />
         </div>
 
         <div>
             <label for="apikey">API Key:</label>
             <input type="text" name="apikey" required />
+        </div>
+
+        <div>
+            <label for="cert">Server Certificate:</label>
+            <textarea name="cert" cols="40" rows="10" required></textarea>
         </div>
 
         <div>

@@ -19,6 +19,7 @@
 #define WIFI_SSID "ssid"
 #define WIFI_PASS "password"
 #define API_KEY "apikey"
+#define CERT "cert"
 
 typedef struct connection_config_t {
     char ssid[32];
