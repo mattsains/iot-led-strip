@@ -1,4 +1,5 @@
 #include "driver/ledc.h"
+#include "driver/rmt.h"
 
 #define LED_0_W 4
 #define LED_0_R 18
@@ -14,3 +15,4 @@
 
 void setup_leds(void);
 void set_led(uint8_t led, uint32_t level);
+void set_strip(uint8_t *data, size_t num_bytes);

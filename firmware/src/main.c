@@ -23,7 +23,7 @@ void websocket_callback(int32_t event_type, char *result)
     for (int i = 0; i < 8; i++)
     {
         char *endptr;
-        int level = strtol(ptr, endptr, 10);
+        int level = strtol(ptr, &endptr, 10);
         if (endptr == NULL) {
             ESP_LOGE("main", "Received invalid message.");
         }
